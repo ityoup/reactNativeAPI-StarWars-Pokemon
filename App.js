@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Button, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, Button, TextInput, StyleSheet, TouchableOpacity, Image } from 'react-native';
 
 const StarWarsScreen = ({ username }) => {
   const [starWarsData, setStarWarsData] = useState(null);
@@ -43,7 +43,8 @@ const PokemonScreen = ({ username }) => {
 
   const fetchPokemonData = async () => {
     try {
-      const response = await fetch('https://pokeapi.co/api/v2/pokemon/1/');
+      const randomPokemonId = Math.floor(Math.random() * 898) + 1;
+      const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${randomPokemonId}/`);
       const data = await response.json();
       setPokemonData(data);
     } catch (error) {
@@ -66,6 +67,9 @@ const PokemonScreen = ({ username }) => {
           <Text style={styles.data}>{pokemonData.height}</Text>
           <Text style={styles.dataTitle}>Peso:</Text>
           <Text style={styles.data}>{pokemonData.weight}</Text>
+          {pokemonData.sprites && (
+            <Image source={{ uri: pokemonData.sprites.front_default }} style={styles.image} />
+          )}
         </View>
       )}
     </View>
@@ -81,29 +85,68 @@ const App = () => {
   const [registeredUsers, setRegisteredUsers] = useState([]);
 
   const handleLogin = () => {
-    const user = registeredUsers.find(user => user.username === username && user.password === password);
-    if (user) {
-      setIsLoggedIn(true);
-      setErrorMessage('');
-    } else {
-      setErrorMessage('Credenciales incorrectas');
-    }
+    fetch('http://localhost:3000/react/user/show')
+      .then(response => response.json())
+      .then(users => {
+        // Verificar si la respuesta contiene un array de usuarios
+        if (Array.isArray(users)) {
+          const user = users.find(user => user.nombre === username && user.contrasena === password);
+          if (user) {
+            setIsLoggedIn(true);
+            setErrorMessage('');
+          } else {
+            setErrorMessage('Credenciales incorrectas');
+          }
+        } else {
+          setErrorMessage('La respuesta del servidor no es válida');
+        }
+      })
+      .catch(error => {
+        console.error('Error al obtener los usuarios:', error);
+        setErrorMessage('Error al obtener los usuarios');
+      });
   };
+  
+  
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     if (username !== '' && password !== '') {
       const userExists = registeredUsers.some(user => user.username === username);
       if (userExists) {
         setErrorMessage('El usuario ya existe');
       } else {
-        const newUser = { username, password };
-        setRegisteredUsers([...registeredUsers, newUser]);
-        setErrorMessage('');
+        try {
+
+
+          fetch('http://localhost:3000/react/user/create', {
+            method: "POST",
+
+            headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              user: username,
+              password: password
+            }),
+          })
+            .then(response => response.json())
+            .then(json => console.log(json))
+            .catch(err => console.log(err));
+
+          const newUser = { username, password };
+          setRegisteredUsers([...registeredUsers, newUser]);
+          setErrorMessage('');
+        } catch (error) {
+          console.error('Error:', error);
+        }
       }
     } else {
       setErrorMessage('Por favor, complete todos los campos');
     }
   };
+
+
 
   const renderPage = () => {
     if (currentPage === 'StarWars') {
@@ -152,6 +195,55 @@ const App = () => {
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  button: {
+    backgroundColor: 'blue',
+    padding: 10,
+    borderRadius: 5,
+    marginBottom: 20,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  dataContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pokemonInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  image: {
+    width: 150,
+    height: 150,
+    marginRight: 10,
+  },
+  textContainer: {
+    flexDirection: 'column',
+    marginLeft: 10,
+  },
+  dataTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 5,
+    textAlign: 'center'
+  },
+  data: {
+    fontSize: 16,
+    marginBottom: 10,
+  },
   container: {
     flex: 1,
     alignItems: 'center',
