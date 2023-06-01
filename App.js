@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
 import { View, Text, Button, TextInput, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import NewScreen from "./modificar_Usuarios";
+
+const Stack = createStackNavigator();
+
 
 const StarWarsScreen = ({ username }) => {
   const [starWarsData, setStarWarsData] = useState(null);
@@ -59,6 +65,7 @@ const PokemonScreen = ({ username }) => {
       <TouchableOpacity style={styles.button} onPress={fetchPokemonData}>
         <Text style={styles.buttonText}>Fetch Pokemon API</Text>
       </TouchableOpacity>
+
       {pokemonData && (
         <View style={styles.dataContainer}>
           <Text style={styles.dataTitle}>Nombre:</Text>
@@ -76,7 +83,9 @@ const PokemonScreen = ({ username }) => {
   );
 };
 
-const App = () => {
+
+
+const HomeScreen = ({ navigation }) => {
   const [currentPage, setCurrentPage] = useState('StarWars');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -106,8 +115,14 @@ const App = () => {
         setErrorMessage('Error al obtener los usuarios');
       });
   };
-  
-  
+
+  const handleLogout = () => {
+    // Restablecer los valores a su estado inicial
+    setUsername('');
+    setPassword('');
+    setIsLoggedIn(false);
+    setErrorMessage('');
+  };
 
   const handleRegister = async () => {
     if (username !== '' && password !== '') {
@@ -116,11 +131,8 @@ const App = () => {
         setErrorMessage('El usuario ya existe');
       } else {
         try {
-
-
           fetch('http://localhost:3000/react/user/create', {
-            method: "POST",
-
+            method: 'POST',
             headers: {
               Accept: 'application/json',
               'Content-Type': 'application/json'
@@ -146,8 +158,6 @@ const App = () => {
     }
   };
 
-
-
   const renderPage = () => {
     if (currentPage === 'StarWars') {
       return <StarWarsScreen username={username} />;
@@ -158,6 +168,7 @@ const App = () => {
   };
 
   return (
+    
     <View style={styles.container}>
       {!isLoggedIn && (
         <View>
@@ -179,6 +190,7 @@ const App = () => {
           <Button title="Registrarse" onPress={handleRegister} />
           {errorMessage !== '' && <Text style={styles.errorMessage}>{errorMessage}</Text>}
         </View>
+        
       )}
       {isLoggedIn && (
         <View>
@@ -188,12 +200,28 @@ const App = () => {
             <Button title="Star Wars" onPress={() => setCurrentPage('StarWars')} />
             <Button title="Pokemon" onPress={() => setCurrentPage('Pokemon')} />
           </View>
+          <View style={styles.buttonContainer}>
+          <Button title="Editar usuarios" onPress={() => navigation.navigate('NewScreen')} />
+
+
+
+            <Button title="Cerrar sesión" onPress={handleLogout} />
+          </View>
         </View>
       )}
     </View>
   );
 };
-
+const App = () => {
+  return (
+    <NavigationContainer>
+      <Stack.Navigator>
+        <Stack.Screen name="Iniciar sesion" component={HomeScreen} />
+        <Stack.Screen name="NewScreen" component={NewScreen} />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+};
 const styles = StyleSheet.create({
   container: {
     flex: 1,
